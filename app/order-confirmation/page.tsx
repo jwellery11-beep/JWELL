@@ -1,27 +1,19 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
-import { ArrowLeft, Check, Clock, Menu, Heart, ShoppingBag, UserRound } from 'lucide-react'
+import { useMemo } from 'react'
+import { ArrowLeft, Clock, Menu, Heart, ShoppingBag, UserRound } from 'lucide-react'
 import SiteFooter from '../../components/site-footer'
 import { money, products } from '../../lib/products'
+import { useCart } from '../../lib/use-cart'
 import styles from './confirmation.module.css'
 
-type CartLine = { slug: string; quantity: number }
-const cartKey = 'miraaya-cart-preview'
 const shipping = 99
 
 export default function OrderConfirmationPage() {
-  const [lines, setLines] = useState<CartLine[]>([])
-  useEffect(() => {
-    try {
-      const saved = window.sessionStorage.getItem(cartKey)
-      if (saved) setLines((JSON.parse(saved) as CartLine[]).filter((line) => line.quantity > 0))
-    } catch { /* session storage is optional in preview environments */ }
-  }, [])
+  const { lines, count } = useCart()
   const items = lines.flatMap((line) => { const product = products.find((item) => item.slug === line.slug); return product ? [{ product, quantity: line.quantity }] : [] })
   const subtotal = useMemo(() => items.reduce((sum, item) => sum + item.product.price * item.quantity, 0), [items])
   const total = subtotal + (items.length ? shipping : 0)
-  const count = items.reduce((sum, item) => sum + item.quantity, 0)
 
   return <main className={styles.page}>
     <header className={styles.header}><button type="button" aria-label="Open menu"><Menu /></button><a href="/" aria-label="Miraaya Jewels home"><img src="/miralogo.png" alt="Miraaya Jewels" /></a><nav aria-label="Account actions"><a href="#account" aria-label="Account"><UserRound /></a><a href="#wishlist" aria-label="Wishlist"><Heart /></a><a href="/cart" aria-label={`${count} items in cart`} className={styles.cart}><ShoppingBag /><b>{count}</b></a></nav></header>

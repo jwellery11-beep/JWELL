@@ -3,13 +3,12 @@
 import { useEffect, useState } from 'react'
 import { Heart, Menu, ShoppingBag, UserRound, ChevronDown } from 'lucide-react'
 import SiteFooter from '../../components/site-footer'
+import { useCartCount } from '../../lib/use-cart-count'
 import styles from './checkout.module.css'
 
 type FormData = { name: string; mobile: string; email: string; address: string; city: string; state: string; pincode: string }
 type Errors = Partial<Record<keyof FormData, string>>
-type CartLine = { slug: string; quantity: number }
 
-const cartKey = 'miraaya-cart-preview'
 const detailsKey = 'miraaya-checkout-details'
 const states = ['Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh', 'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand', 'Karnataka', 'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur', 'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal', 'Andaman and Nicobar Islands', 'Chandigarh', 'Delhi', 'Jammu and Kashmir', 'Ladakh', 'Puducherry']
 const initial: FormData = { name: '', mobile: '', email: '', address: '', city: '', state: '', pincode: '' }
@@ -18,13 +17,11 @@ export default function CheckoutPage() {
   const [form, setForm] = useState(initial)
   const [errors, setErrors] = useState<Errors>({})
   const [submitted, setSubmitted] = useState(false)
-  const [cartCount, setCartCount] = useState(0)
+  const cartCount = useCartCount()
 
   useEffect(() => {
     try {
-      const saved = window.sessionStorage.getItem(cartKey)
       const savedDetails = window.sessionStorage.getItem(detailsKey)
-      if (saved) setCartCount((JSON.parse(saved) as CartLine[]).reduce((sum, line) => sum + line.quantity, 0))
       if (savedDetails) setForm(JSON.parse(savedDetails) as FormData)
     } catch { /* session storage is optional in preview environments */ }
   }, [])

@@ -4,10 +4,10 @@ import { useEffect, useMemo, useState } from 'react'
 import { ArrowLeft, ChevronRight, Heart, Minus, Plus, ShoppingBag, Trash2 } from 'lucide-react'
 import SiteFooter from '../../components/site-footer'
 import { money, products, type Product } from '../../lib/products'
+import { CART_KEY, type CartLine } from '../../lib/cart'
+import { useCart } from '../../lib/use-cart'
 import styles from './cart.module.css'
 
-type CartLine = { slug: string; quantity: number }
-const CART_KEY = 'miraaya-cart-preview'
 const shippingCharge = 99
 const previewCart: CartLine[] = [
   { slug: 'crystal-drop-earrings', quantity: 1 },
@@ -16,25 +16,17 @@ const previewCart: CartLine[] = [
 ]
 
 export default function CartPage() {
-  const [lines, setLines] = useState<CartLine[]>(previewCart)
-  const [hydrated, setHydrated] = useState(false)
+  const { lines, hydrated, addToCart, removeFromCart, updateQuantity, setLines } = useCart()
   const [wishes, setWishes] = useState<string[]>([])
   const [notice, setNotice] = useState('')
 
   useEffect(() => {
-    try {
-      const saved = window.sessionStorage.getItem(CART_KEY)
-      if (saved) {
-        const parsed = JSON.parse(saved) as CartLine[]
-        if (Array.isArray(parsed)) setLines(parsed.filter((line) => products.some((product) => product.slug === line.slug) && line.quantity > 0))
-      } else window.sessionStorage.setItem(CART_KEY, JSON.stringify(previewCart))
-    } catch { /* session storage is optional in preview environments */ }
-    setHydrated(true)
-  }, [])
-
-  useEffect(() => {
-    if (hydrated) window.sessionStorage.setItem(CART_KEY, JSON.stringify(lines))
-  }, [hydrated, lines])
+    if (hydrated && lines.length === 0) {
+      try {
+        if (!window.sessionStorage.getItem(CART_KEY)) setLines(previewCart)
+      } catch { /* session storage is optional in preview environments */ }
+    }
+  }, [hydrated, lines.length, setLines])
 
   const cartItems = lines.flatMap((line) => { const product = products.find((item) => item.slug === line.slug); return product ? [{ product, quantity: line.quantity }] : [] })
   const subtotal = useMemo(() => cartItems.reduce((sum, item) => sum + item.product.price * item.quantity, 0), [cartItems])
@@ -42,10 +34,9 @@ export default function CartPage() {
   const total = subtotal + (cartItems.length ? shippingCharge : 0)
   const recommendations = products.filter((product) => !lines.some((line) => line.slug === product.slug)).slice(0, 4)
 
-  const updateQuantity = (slug: string, amount: number) => setLines((current) => current.map((line) => line.slug === slug ? { ...line, quantity: Math.max(1, line.quantity + amount) } : line))
-  const removeLine = (slug: string) => setLines((current) => current.filter((line) => line.slug !== slug))
+  const removeLine = (slug: string) => removeFromCart(slug)
   const addRecommendation = (product: Product) => {
-    setLines((current) => current.some((line) => line.slug === product.slug) ? current.map((line) => line.slug === product.slug ? { ...line, quantity: line.quantity + 1 } : line) : [...current, { slug: product.slug, quantity: 1 }])
+    addToCart(product.slug)
     setNotice(`${product.name} added to cart`)
     window.setTimeout(() => setNotice(''), 2200)
   }

@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react'
 import { ArrowRight, Heart, Menu, Search, ShoppingBag, UserRound, X, Truck, ShieldCheck, Headphones, Gem, Star, Gift, Plus, Minus } from 'lucide-react'
 import SiteFooter from '../components/site-footer'
+import { addToCart, slugify } from '../lib/cart'
+import { useCartCount } from '../lib/use-cart-count'
 
 const categories = [
   ['Necklaces', '/category-necklaces.png'],
@@ -39,7 +41,7 @@ function ProductCard({ item, onAdd, onWish, wished }: { item: string[]; onAdd: (
 }
 
 export default function Page() {
-  const [cart, setCart] = useState(2)
+  const cart = useCartCount()
   const [wishes, setWishes] = useState<number[]>([])
   const [menu, setMenu] = useState(false)
   const [faq, setFaq] = useState<number | null>(null)
@@ -58,7 +60,7 @@ export default function Page() {
     return () => { window.removeEventListener('scroll', onScroll); window.removeEventListener('keydown', onKeyDown); document.body.style.overflow = '' }
   }, [menu])
   const closeAnnouncement = () => { setAnnouncementVisible(false); try { sessionStorage.setItem('miraaya-announcement-dismissed', '1') } catch {} }
-  const add = (name: string) => { setCart((n) => n + 1); setToast(`${name} added to cart`); window.setTimeout(() => setToast(''), 2200) }
+  const add = (name: string) => { addToCart(slugify(name)); setToast(`${name} added to cart`); window.setTimeout(() => setToast(''), 2200) }
   const toggleWish = (i: number) => setWishes((w) => w.includes(i) ? w.filter((x) => x !== i) : [...w, i])
 
   return <main id="top">
